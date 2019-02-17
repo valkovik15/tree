@@ -3,14 +3,13 @@ import java.io.*;
 import java.util.*;
 
 
-
-
 public class Solution {
     public static class BinaryTree {
         public class Node implements Comparable<Node> {
             private int data;
             private Node left;
             private Node right;
+            private Node parent;
 
             @Override
             public int compareTo(Node node) {
@@ -46,6 +45,7 @@ public class Solution {
                 this.left = null;
                 this.right = null;
                 this.height = 1;
+                parent = null;
             }
 
             private int height;
@@ -59,12 +59,10 @@ public class Solution {
 
         private Node root;
 
-        public static Set<Node> leaves;
         public static HashMap<Node, ArrayList<Integer>> waysTo;
 
         static {
-            waysTo = new HashMap<>(500);
-            leaves = new TreeSet<>();
+            waysTo = new HashMap<>();
         }
 
 
@@ -89,24 +87,14 @@ public class Solution {
                 else
                     return;
             }
-            ArrayList<Integer> temp = new ArrayList<>(waysTo.get(y));
             if (data < (y.data)) {
-                temp.add(temp.lastIndexOf(y.data), data);
                 y.left = newNode;
-
             } else {
-                int index = temp.indexOf(y.data) + 1;
-                try {
-                    temp.add(index, data);
-                } catch (IndexOutOfBoundsException ex) {
-                    temp.add(data);
-                }
                 y.right = newNode;
             }
+            newNode.parent = y;
             newNode.height = y.height + 1;
-            leaves.add(newNode);
-            leaves.remove(y);
-            waysTo.put(newNode, temp);
+
         }
 
         void iterativePreorder() {
@@ -162,10 +150,81 @@ public class Solution {
             root = remove(root, key);
         }
 
+        public Set<Integer> BFS() {
+
+            LinkedList<Node> queue = new LinkedList<Node>();
+
+            ArrayList<Integer> init = new ArrayList<>();
+            init.add(root.data);
+            waysTo.put(root, init);
+            if (root.left != null)
+                queue.add(root.left);
+            if (root.right != null)
+                queue.add(root.right);
+            Node curNode = null;
+            Set<Integer> toDel = new TreeSet<>();
+            while (queue.size() != 0) {
+                curNode = queue.poll();
+                Node parent = curNode.parent;
+                ArrayList<Integer> temp = new ArrayList<>(waysTo.get(parent));
+                if (curNode.data < (parent.data)) {
+                    temp.add(temp.lastIndexOf(parent.data), curNode.data);
+                } else {
+                    int index = temp.indexOf(parent.data) + 1;
+                    try {
+                        temp.add(index, curNode.data);
+                    } catch (IndexOutOfBoundsException ex) {
+                        temp.add(curNode.data);
+                        System.out.println("Ough");
+                    }
+                }
+
+                waysTo.put(curNode, temp);
+                if (curNode.left == null && curNode.right == null) {
+                    break;
+                }
+                if (curNode.left != null) {
+                    queue.add(curNode.left);
+                }
+                if (curNode.right != null) {
+                    queue.add(curNode.right);
+                }
+            }
+            int length = curNode.height;
+            if (length % 2 == 0) {
+                return null;
+            } else {
+                toDel.add(waysTo.get(curNode).get(length / 2));
+                while (queue.size() > 0) {
+
+                    curNode = queue.poll();
+                    if (curNode.left == null && curNode.right == null) {
+                        Node parent = curNode.parent;
+                        List<Integer> temp = new ArrayList<>(waysTo.get(parent));
+                        int toComp = temp.get(length / 2);
+                        if (curNode.data > toComp) {
+                            toDel.add(toComp);
+                        } else {
+                            if (curNode.data > temp.get(length / 2 - 1)) {
+                                toDel.add(curNode.data);
+                            }
+                            else
+                            {
+                                toDel.add(temp.get(length / 2 - 1));
+                            }
+                        }
+                    }
+
+                }
+            }
+            return toDel;
+        }
     }
+
 
     public static void main(String[] args) throws IOException {
         try {
+
             BufferedReader bi = new BufferedReader(new InputStreamReader(new FileInputStream("tst.in")));
             String line = new String();
             boolean noninit = true;
@@ -179,28 +238,22 @@ public class Solution {
                     bt.addIter(x);
                 }
             }
-            Set<Integer> toDel = new TreeSet<>();
-            int min = BinaryTree.leaves.stream().map(BinaryTree.Node::getHeight).min(Integer::compareTo).get();
-            if (min % 2 == 0)
-                bt.iterativePreorder();
-            else {
-                BinaryTree.leaves.removeIf(o -> o.getHeight() > min);
-                for (BinaryTree.Node i : BinaryTree.leaves) {
-                    toDel.add(BinaryTree.waysTo.get(i).get(min / 2));
-                }
+            Set<Integer> toDel = bt.BFS();
+            if (toDel != null) {
                 for (int i : toDel) {
                     bt.remove(i);
                 }
-                bt.iterativePreorder();
             }
-        } catch (IOException ex) {
+            bt.iterativePreorder();
+        } catch (
+                IOException ex) {
 
             System.out.println(ex.getMessage());
         }
     }
 
 
-    //bt.iterativePreorder();
+//bt.iterativePreorder();
 
 }
 
