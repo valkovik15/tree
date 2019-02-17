@@ -1,9 +1,15 @@
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 
-public class Solution {
+public class Solution implements Runnable {
+    public static void main(String[] args) throws IOException {
+        new Thread(null, new Solution(), "", 2 << 26).start();
+    }
+
     public static class BinaryTree {
         public class Node implements Comparable<Node> {
             private int data;
@@ -13,11 +19,8 @@ public class Solution {
 
             @Override
             public int compareTo(Node node) {
-                if (data > node.data)
-                    return 1;
-                if (data < node.data)
-                    return -1;
-                return 0;
+                int tocomp = node.data;
+                return data > tocomp ? 1 : -1;
             }
 
             @Override
@@ -40,27 +43,20 @@ public class Solution {
                 return data;
             }
 
-            Node(Integer data) {
+            Node(int data) {
                 this.data = data;
-                this.left = null;
-                this.right = null;
-                this.height = 1;
-                parent = null;
             }
 
-            private int height;
-
-            public int getHeight() {
-                return height;
-            }
+            public int height;
 
 
         }
 
-        private Node root;
+        public Node root;
 
         public BinaryTree(int data) {
             root = new Node(data);
+            root.height = 1;
 
         }
 
@@ -90,11 +86,10 @@ public class Solution {
         void iterativePreorder() {
             Queue<Node> nodeStack = Collections.asLifoQueue(new ArrayDeque<Node>());
             nodeStack.add(root);
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter("tst.out"))) {
+            try (OutputStream bw = Files.newOutputStream(Paths.get("tst.out"))) {
                 while (nodeStack.isEmpty() == false) {
                     Node mynode = nodeStack.peek();
-                    bw.write(Integer.toString(mynode.data));
-                    bw.newLine();
+                    bw.write((Integer.toString(mynode.data) + '\n').getBytes());
                     nodeStack.remove();
                     if (mynode.right != null) {
                         nodeStack.add(mynode.right);
@@ -149,7 +144,7 @@ public class Solution {
                 queue.add(root.right);
             Node curNode = null;
             Set<Integer> toDel = new TreeSet<>();
-            while (queue.size() != 0) {
+            while (!queue.isEmpty()) {
                 curNode = queue.peek();
                 if (curNode.left == null && curNode.right == null) {
                     break;
@@ -166,9 +161,10 @@ public class Solution {
             if (length % 2 == 0) {
                 return null;
             } else {
-                while (queue.size() > 0) {
+                int toret = length >> 1;
+                while (!queue.isEmpty()) {
                     Node t = queue.poll();
-                    if (t.height == length) {
+                    if (t.height == length && t.left == null && t.right == null) {
                         Node[] wayFirst = new Node[length];
                         for (int i = 0; i < length; i++) {
                             wayFirst[i] = t;
@@ -185,13 +181,13 @@ public class Solution {
                                 waySecond[left] = wayFirst[i].data;
                                 left++;
                             }
-                            if (waySecond[length / 2] != 0) {
-                                toDel.add(waySecond[length / 2]);
+
+                            if (waySecond[toret] != 0) {
+                                toDel.add(waySecond[toret]);
                                 break;
                             }
                         }
-                        if(waySecond[length/2]==0)
-                        {
+                        if (waySecond[toret] == 0) {
                             toDel.add(wayFirst[0].data);
                         }
                     }
@@ -202,22 +198,16 @@ public class Solution {
 
     }
 
-
-    public static void main(String[] args) throws IOException {
+    public void run() {
         try {
 
             BufferedReader bi = new BufferedReader(new InputStreamReader(new FileInputStream("tst.in")));
-            String line = new String();
-            boolean noninit = true;
-            BinaryTree bt = new BinaryTree(0);
+            String line = bi.readLine();
+            Integer x = Integer.parseInt(line.trim());
+            BinaryTree bt = new BinaryTree(x);
             while ((line = bi.readLine()) != null) {
-                Integer x = Integer.parseInt(line.trim());
-                if (noninit) {
-                    noninit = false;
-                    bt = new BinaryTree(x);
-                } else {
-                    bt.addIter(x);
-                }
+                x = Integer.parseInt(line.trim());
+                bt.addIter(x);
             }
             Set<Integer> toDel = bt.BFS();
             if (toDel != null) {
@@ -232,9 +222,5 @@ public class Solution {
             System.out.println(ex.getMessage());
         }
     }
-
-
-//bt.iterativePreorder();
-
 }
 
