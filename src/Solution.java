@@ -59,19 +59,9 @@ public class Solution {
 
         private Node root;
 
-        public static HashMap<Node, ArrayList<Integer>> waysTo;
-
-        static {
-            waysTo = new HashMap<>();
-        }
-
-
         public BinaryTree(int data) {
             root = new Node(data);
-            waysTo.clear();
-            ArrayList<Integer> temp = new ArrayList<>();
-            temp.add(root.data);
-            waysTo.put(root, temp);
+
         }
 
         public void addIter(Node newNode, int data) {
@@ -152,11 +142,7 @@ public class Solution {
 
         public Set<Integer> BFS() {
 
-            LinkedList<Node> queue = new LinkedList<Node>();
-
-            ArrayList<Integer> init = new ArrayList<>();
-            init.add(root.data);
-            waysTo.put(root, init);
+            LinkedList<Node> queue = new LinkedList<>();
             if (root.left != null)
                 queue.add(root.left);
             if (root.right != null)
@@ -164,22 +150,7 @@ public class Solution {
             Node curNode = null;
             Set<Integer> toDel = new TreeSet<>();
             while (queue.size() != 0) {
-                curNode = queue.poll();
-                Node parent = curNode.parent;
-                ArrayList<Integer> temp = new ArrayList<>(waysTo.get(parent));
-                if (curNode.data < (parent.data)) {
-                    temp.add(temp.lastIndexOf(parent.data), curNode.data);
-                } else {
-                    int index = temp.indexOf(parent.data) + 1;
-                    try {
-                        temp.add(index, curNode.data);
-                    } catch (IndexOutOfBoundsException ex) {
-                        temp.add(curNode.data);
-                        System.out.println("Ough");
-                    }
-                }
-
-                waysTo.put(curNode, temp);
+                curNode = queue.peek();
                 if (curNode.left == null && curNode.right == null) {
                     break;
                 }
@@ -189,36 +160,46 @@ public class Solution {
                 if (curNode.right != null) {
                     queue.add(curNode.right);
                 }
+                queue.poll();
             }
             int length = curNode.height;
             if (length % 2 == 0) {
                 return null;
             } else {
-                toDel.add(waysTo.get(curNode).get(length / 2));
                 while (queue.size() > 0) {
-
-                    curNode = queue.poll();
-                    if (curNode.left == null && curNode.right == null) {
-                        Node parent = curNode.parent;
-                        List<Integer> temp = new ArrayList<>(waysTo.get(parent));
-                        int toComp = temp.get(length / 2);
-                        if (curNode.data > toComp) {
-                            toDel.add(toComp);
-                        } else {
-                            if (curNode.data > temp.get(length / 2 - 1)) {
-                                toDel.add(curNode.data);
+                    Node t = queue.poll();
+                    if (t.height == length) {
+                        Node[] wayFirst = new Node[length];
+                        for (int i = 0; i < length; i++) {
+                            wayFirst[i] = t;
+                            t = t.parent;
+                        }
+                        int[] waySecond = new int[length];
+                        int left = 0;
+                        int right = length - 1;
+                        for (int i = length - 1; i > 0; i--) {
+                            if (wayFirst[i - 1] == wayFirst[i].left) {
+                                waySecond[right] = wayFirst[i].data;
+                                right--;
+                            } else {
+                                waySecond[left] = wayFirst[i].data;
+                                left++;
                             }
-                            else
-                            {
-                                toDel.add(temp.get(length / 2 - 1));
+                            if (waySecond[length / 2] != 0) {
+                                toDel.add(waySecond[length / 2]);
+                                break;
                             }
                         }
+                        if(waySecond[length/2]==0)
+                        {
+                            toDel.add(wayFirst[0].data);
+                        }
                     }
-
                 }
             }
             return toDel;
         }
+
     }
 
 
